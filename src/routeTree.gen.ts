@@ -8,61 +8,86 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as IndexRouteImport } from "./routes/index";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as storeLayoutRouteImport } from './routes/(store)/_layout'
+import { Route as storeLayoutIndexRouteImport } from './routes/(store)/_layout/index'
 
-const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+const storeLayoutRoute = storeLayoutRouteImport.update({
+  id: '/(store)/_layout',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
+const storeLayoutIndexRoute = storeLayoutIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => storeLayoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
+  '/': typeof storeLayoutIndexRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
+  '/': typeof storeLayoutIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
+  __root__: typeof rootRouteImport
+  '/(store)/_layout': typeof storeLayoutRouteWithChildren
+  '/(store)/_layout/': typeof storeLayoutIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/";
-  fileRoutesByTo: FileRoutesByTo;
-  to: "/";
-  id: "__root__" | "/";
-  fileRoutesById: FileRoutesById;
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths: '/'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/'
+  id: '__root__' | '/(store)/_layout' | '/(store)/_layout/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
+  storeLayoutRoute: typeof storeLayoutRouteWithChildren
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+    '/(store)/_layout': {
+      id: '/(store)/_layout'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof storeLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(store)/_layout/': {
+      id: '/(store)/_layout/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof storeLayoutIndexRouteImport
+      parentRoute: typeof storeLayoutRoute
+    }
   }
 }
 
+interface storeLayoutRouteChildren {
+  storeLayoutIndexRoute: typeof storeLayoutIndexRoute
+}
+
+const storeLayoutRouteChildren: storeLayoutRouteChildren = {
+  storeLayoutIndexRoute: storeLayoutIndexRoute,
+}
+
+const storeLayoutRouteWithChildren = storeLayoutRoute._addFileChildren(
+  storeLayoutRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-};
+  storeLayoutRoute: storeLayoutRouteWithChildren,
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx";
-import type { createStart } from "@tanstack/react-start";
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
   }
 }

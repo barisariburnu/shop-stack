@@ -1,14 +1,13 @@
-import {
-  HeadContent,
-  Scripts,
-  createRootRouteWithContext,
-} from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
-
-import Header from "../components/Header";
-
+import {
+  createRootRouteWithContext,
+  HeadContent,
+  Scripts,
+} from "@tanstack/react-router";
+import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/base/provider/theme-provider";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
@@ -34,7 +33,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       ],
     }),
     shellComponent: RootDocument,
-  }
+  },
 );
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -44,8 +43,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <Header />
-        {children}
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+          {children}
+          <Toaster richColors closeButton position="top-right" />
+        </ThemeProvider>
         <TanStackDevtools
           config={{
             position: "bottom-right",
