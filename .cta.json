@@ -11,9 +11,5 @@
   "routerOnly": false,
   "version": 1,
   "framework": "react-cra",
-  "chosenAddOns": [
-    "biome",
-    "nitro",
-    "shadcn"
-  ]
+  "chosenAddOns": ["biome", "nitro", "shadcn"]
 }

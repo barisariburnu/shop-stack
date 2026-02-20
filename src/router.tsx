@@ -1,20 +1,27 @@
-import { createRouter as createTanStackRouter } from '@tanstack/react-router'
-import { routeTree } from './routeTree.gen'
+import { createRouter as createTanStackRouter } from "@tanstack/react-router";
+import { QueryClient } from "@tanstack/react-query";
+import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
+import { routeTree } from "./routeTree.gen";
 
 export function getRouter() {
+  const queryClient = new QueryClient();
   const router = createTanStackRouter({
     routeTree,
-
+    context: { queryClient },
     scrollRestoration: true,
-    defaultPreload: 'intent',
+    defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
-  })
+    defaultErrorComponent: () => <div>Something went wrong</div>,
+    defaultNotFoundComponent: () => <div>Not found</div>,
+  });
 
-  return router
+  setupRouterSsrQueryIntegration({ router, queryClient });
+
+  return router;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface Register {
-    router: ReturnType<typeof getRouter>
+    router: ReturnType<typeof getRouter>;
   }
 }
