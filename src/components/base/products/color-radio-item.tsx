@@ -46,7 +46,7 @@ export const ColorSwatch: React.FC<ColorSwatchProps> = ({
         "size-6 shrink-0 rounded-full border-2 border-gray-200 shadow-xs outline-none transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
         selected &&
           "scale-110 border-primary ring-2 ring-primary ring-offset-1",
-        className
+        className,
       )}
       style={{ backgroundColor: hex }}
       title={color}
@@ -70,7 +70,7 @@ export const ColorRadioItem: React.FC<ColorRadioItemProps> = ({
       id={id}
       className={cn(
         "size-6 shrink-0 rounded-full border-2 border-gray-200 shadow-xs outline-none transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:scale-110 data-[state=checked]:border-primary data-[state=checked]:ring-2 data-[state=checked]:ring-primary data-[state=checked]:ring-offset-1",
-        className
+        className,
       )}
       style={{ backgroundColor: hex }}
       title={color}
