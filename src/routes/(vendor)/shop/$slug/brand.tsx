@@ -11,7 +11,7 @@ import { shopBySlugQueryOptions } from "@/hooks/vendors/use-shops";
 import { createVendorBrandsFetcher } from "@/hooks/vendors/use-vendor-entity-fetchers";
 import type { BrandFormValues, BrandItem } from "@/types/brands";
 
-export const Route = createFileRoute("/(vendor)/shop/$slug/brands")({
+export const Route = createFileRoute("/(vendor)/shop/$slug/brand")({
   component: BrandsPage,
   pendingComponent: PageSkeleton,
 });

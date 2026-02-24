@@ -7,8 +7,8 @@
 
 import { redirect } from "@tanstack/react-router";
 import { createMiddleware } from "@tanstack/react-start";
-import { isUserAdmin } from "@/lib/middleware/admin";
-import { auth } from "@/lib/middleware/auth";
+import { auth } from "@/lib/auth";
+import { isUserAdmin } from "@/lib/helper/vendor";
 
 const getRequestUrl = (request: Request) => {
   try {

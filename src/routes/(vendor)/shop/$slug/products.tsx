@@ -17,7 +17,7 @@ import { taxRatesQueryOptions } from "@/hooks/vendors/use-tax-rates";
 import { createVendorProductsFetcher } from "@/hooks/vendors/use-vendor-entity-fetchers";
 import type { ProductFormValues, ProductItem } from "@/types/products";
 
-export const Route = createFileRoute("/(vendor)/shop/$slug/products/")({
+export const Route = createFileRoute("/(vendor)/shop/$slug/products")({
   component: ProductsPage,
   pendingComponent: PageSkeleton,
 });

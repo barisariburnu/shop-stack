@@ -2,10 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { Menu, ShoppingBag } from "lucide-react";
 import { MobileMenu } from "@/components/base/common/mobile-menu";
 import Navbar from "@/components/base/common/navbar";
+import UserMenu from "@/components/base/common/user-menu";
 import { ModeToggle } from "@/components/base/provider/mode-toggle";
 import CartSheet from "@/components/containers/store/cart/cart-sheet";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/store/use-cart";
+import { useSession } from "@/lib/auth/auth-client";
 import { useCartStore } from "@/lib/store/cart-store";
 
 const navigationItems = [
@@ -15,6 +17,8 @@ const navigationItems = [
 ];
 
 export default function Header() {
+  const { data } = useSession();
+  const user = data?.user;
   const { totalItems } = useCart();
   const { setIsOpen } = useCartStore();
 
@@ -55,11 +59,15 @@ export default function Header() {
 
             <ModeToggle />
 
-            <Link to="/auth/sign-in">
-              <Button variant="default" size="lg" type="button">
-                Sign In
-              </Button>
-            </Link>
+            {user ? (
+              <UserMenu user={user} />
+            ) : (
+              <Link to="/auth/sign-in">
+                <Button variant="default" size="lg" type="button">
+                  Sign In
+                </Button>
+              </Link>
+            )}
           </div>
 
           <div className="flex @6xl:hidden">

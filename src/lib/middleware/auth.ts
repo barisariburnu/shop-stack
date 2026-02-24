@@ -1,6 +1,6 @@
 import { redirect } from "@tanstack/react-router";
 import { createMiddleware } from "@tanstack/react-start";
-import { auth } from "@/lib/middleware/auth";
+import { auth } from "@/lib/auth";
 
 const getRequestUrl = (request: Request) => {
   try {

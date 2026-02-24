@@ -1,60 +1,148 @@
-import z from "zod";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { admin, twoFactor } from "better-auth/plugins";
+import { tanstackStartCookies } from "better-auth/tanstack-start";
+import { db } from "@/lib/db";
+import {
+  account,
+  session,
+  twoFactor as twoFactorTable,
+  user,
+  verification,
+} from "@/lib/db/schema/auth-schema";
+import { sendEmail } from "@/lib/email";
+import OtpEmail from "@/lib/emails/otp-email";
 
-export const passwordSchema = z
-  .string()
-  .min(8, "Password must be at least 8 characters")
-  .max(128, "Password must be at most 128 characters")
-  .refine((val) => /[A-Z]/.test(val), {
-    message: "Must contain at least one uppercase letter",
-  })
-  .refine((val) => /[a-z]/.test(val), {
-    message: "Must contain at least one lowercase letter",
-  })
-  .refine((val) => /\d/.test(val), {
-    message: "Must contain at least one number",
-  })
-  .refine((val) => /[^A-Za-z0-9]/.test(val), {
-    message: "Must contain at least one special character",
-  });
+export const auth = betterAuth({
+  // Base path where auth routes are mounted
+  basePath: "/api/auth",
 
-export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-  rememberMe: z.boolean().optional().default(true),
+  // App name for TOTP issuer
+  appName: "Shop Stack",
+
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        required: false,
+        defaultValue: "customer",
+      },
+      orderEmailsEnabled: {
+        type: "boolean",
+        required: false,
+        defaultValue: true,
+      },
+    },
+  },
+
+  // Security-related configuration
+  // Use a deterministic dev secret if env is missing to prevent runtime errors
+  secret: process.env.BETTER_AUTH_SECRET ?? "dev-secret",
+  trustedOrigins: [
+    ...new Set(
+      [process.env.VITE_BETTER_AUTH_URL, process.env.BETTER_AUTH_URL].filter(
+        Boolean,
+      ) as string[],
+    ),
+  ],
+
+  emailAndPassword: {
+    enabled: true,
+    disableSignUp: false,
+    requireEmailVerification: false,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
+    autoSignIn: true,
+  },
+
+  // Advanced security options
+  advanced: {
+    useSecureCookies: process.env.NODE_ENV === "production",
+    defaultCookieAttributes: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    },
+    disableCSRFCheck: false,
+    ipAddress: {
+      // Ensure rate limit/session IP tracking works behind proxies/CDNs if applicable
+      ipAddressHeaders: ["x-forwarded-for", "cf-connecting-ip"],
+    },
+  },
+
+  // Built-in rate limiting
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 100,
+    // Use in-memory storage to avoid missing DB tables in dev
+    storage: "memory",
+    // Apply stricter limits to sensitive endpoints
+    customRules: {
+      "/sign-in/email": { window: 10, max: 3 },
+      "/sign-up/email": { window: 10, max: 3 },
+    },
+  },
+
+  // Optional social providers if configured via env variables
+  socialProviders: {
+    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+      ? {
+          github: {
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+          },
+        }
+      : {}),
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          },
+        }
+      : {}),
+  },
+
+  plugins: [
+    admin({ defaultRole: "customer" }),
+    twoFactor({
+      skipVerificationOnEnable: true,
+      otpOptions: {
+        async sendOTP({ user, otp }) {
+          try {
+            const result = await sendEmail({
+              to: user.email!,
+              subject: "Your OTP Code",
+              body: OtpEmail({
+                otp,
+                userName: user.name || user.email || "User",
+                expiresInMinutes: 5,
+              }),
+            });
+            console.log(
+              "Email sent successfully! Message ID:",
+              result.messageId,
+            );
+          } catch (error) {
+            console.error("Failed to send OTP email:", error);
+            throw new Error("Failed to send verification code");
+          }
+        },
+      },
+    }),
+    tanstackStartCookies(), // make sure this is the last plugin in the array
+  ],
+
+  // Drizzle adapter with explicit schema mapping
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema: {
+      user,
+      account,
+      session,
+      verification,
+      twoFactor: twoFactorTable,
+    },
+  }),
 });
-
-export const registerSchema = z
-  .object({
-    name: z.string().min(2, "Name must be at least 2 characters"),
-    email: z.string().email("Invalid email address"),
-    password: passwordSchema,
-    confirmPassword: passwordSchema,
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Passwords do not match",
-  });
-
-// Vendor Registration Schema
-export const vendorRegisterSchema = z
-  .object({
-    // Personal info
-    name: z.string().min(2, "Name must be at least 2 characters"),
-    email: z.string().email("Invalid email address"),
-    password: passwordSchema,
-    confirmPassword: z.string(),
-    // Store info
-    storeName: z.string().min(2, "Store name must be at least 2 characters"),
-    storeDescription: z.string().optional(),
-    contactPhone: z.string().optional(),
-    countryCode: z.string().optional().default("BD"),
-    address: z.string().optional(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Passwords do not match",
-  });
-
-export type LoginInput = z.infer<typeof loginSchema>;
-export type RegisterInput = z.infer<typeof registerSchema>;
-export type VendorRegisterInput = z.infer<typeof vendorRegisterSchema>;

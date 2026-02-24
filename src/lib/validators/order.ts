@@ -13,7 +13,7 @@ import { z } from "zod";
 export const addressSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Valid email is required"),
+  email: z.email("Valid email is required"),
   phone: z.string().min(1, "Phone is required"),
   street: z.string().min(1, "Street address is required"),
   city: z.string().min(1, "City is required"),

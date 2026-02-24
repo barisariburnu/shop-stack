@@ -103,7 +103,7 @@ export const createCategorySchema = z.object({
     .string()
     .max(500, "Description must be at most 500 characters")
     .optional(),
-  image: z.string().url().optional().or(z.literal("")),
+  image: z.url().optional().or(z.literal("")),
   icon: z.string().max(50).optional(),
   parentId: z.string().optional().nullable(),
   sortOrder: z.coerce.number().min(0).optional().default(0),

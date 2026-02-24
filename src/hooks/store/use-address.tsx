@@ -1,226 +1,165 @@
 /**
- * Checkout Hooks
+ * Customer Addresses Hook
  *
- * React Query hooks for checkout operations.
+ * React hook for address management in the customer account area.
+ * Uses TanStack Query with server functions for SSR-compatible data fetching.
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  cancelOrder,
-  confirmPayment,
-  createCheckoutSession,
-  getCustomerOrders,
-  getOrderById,
-  getOrderPaymentSession,
-  getOrdersByIds,
-} from "@/lib/functions/store/order";
+  createAddress,
+  deleteAddress,
+  getUserAddresses,
+  setDefaultAddress,
+  updateAddress,
+} from "@/lib/functions/store/address";
 import type {
-  CancelOrderInput,
-  ConfirmPaymentInput,
-  CreateCheckoutSessionInput,
-  GetOrderByIdInput,
-  GetOrdersByIdsInput,
-  GetOrdersInput,
-} from "@/lib/validators/order";
-import type { CheckoutSessionData } from "@/types/orders";
+  CreateAddressInput,
+  DeleteAddressInput,
+  UpdateAddressInput,
+} from "@/lib/validators/address";
 
 // ============================================================================
 // Query Keys
 // ============================================================================
 
-const orderKeys = {
-  all: ["orders"] as const,
-  lists: () => [...orderKeys.all, "list"] as const,
-  list: (filters: GetOrdersInput) => [...orderKeys.lists(), filters] as const,
-  details: () => [...orderKeys.all, "detail"] as const,
-  detail: (id: string) => [...orderKeys.details(), id] as const,
-  batch: (ids: string[]) =>
-    [...orderKeys.all, "batch", [...ids].sort()] as const,
+export const addressKeys = {
+  all: ["account", "addresses"] as const,
+  lists: () => [...addressKeys.all, "list"] as const,
+  details: () => [...addressKeys.all, "detail"] as const,
 };
 
 // ============================================================================
-// Checkout Session Storage Key
+// Default Query Params
 // ============================================================================
 
-const CHECKOUT_SESSION_KEY = "checkout-session-data";
-/**
- * Store checkout session data in localStorage
- */
-export function storeCheckoutSession(data: CheckoutSessionData): void {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(CHECKOUT_SESSION_KEY, JSON.stringify(data));
-  }
-}
-
-/**
- * Retrieve checkout session data from localStorage
- */
-export function getCheckoutSession(): CheckoutSessionData | null {
-  if (typeof window !== "undefined") {
-    const data = localStorage.getItem(CHECKOUT_SESSION_KEY);
-    if (data) {
-      try {
-        return JSON.parse(data);
-      } catch {
-        return null;
-      }
-    }
-  }
-  return null;
-}
-
-/**
- * Clear checkout session from localStorage
- */
-export function clearCheckoutSession(): void {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem(CHECKOUT_SESSION_KEY);
-  }
-}
+const defaultParams = {};
 
 // ============================================================================
-// Checkout Session Mutation
+// Query Options
 // ============================================================================
 
-export function useCreateCheckoutSession(options?: {
-  onSuccess?: (data: CheckoutSessionData) => void;
-}) {
-  return useMutation({
-    mutationFn: async (data: CreateCheckoutSessionInput) => {
-      const result = await createCheckoutSession({ data });
-      return result;
-    },
-    onSuccess: (result) => {
-      // Store the checkout session data
-      const sessionData: CheckoutSessionData = {
-        orderIds: result.orderIds,
-        paymentIntentId: result.paymentIntentId,
-        clientSecret: result.clientSecret,
-        totalAmount: result.totalAmount,
-      };
-      storeCheckoutSession(sessionData);
-
-      // Call custom success handler if provided
-      options?.onSuccess?.(sessionData);
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to create checkout session");
-    },
+/**
+ * Query options for fetching user addresses
+ */
+export const addressesQueryOptions = (_params = defaultParams) =>
+  queryOptions({
+    queryKey: addressKeys.lists(),
+    queryFn: () => getUserAddresses(),
   });
-}
 
 // ============================================================================
-// Confirm Payment Mutation
+// Combined Hook
 // ============================================================================
 
-export function useConfirmPayment() {
+/**
+ * Combined hook for address queries and mutations
+ * Provides a unified interface for all address operations
+ */
+export const useAddress = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (data: ConfirmPaymentInput) => {
-      const result = await confirmPayment({ data });
+  const invalidateAddresses = () => {
+    queryClient.invalidateQueries({
+      queryKey: addressKeys.lists(),
+    });
+  };
+
+  return {
+    addressesQueryOptions,
+    invalidateAddresses,
+  };
+};
+
+// ============================================================================
+// Mutations Hook
+// ============================================================================
+
+/**
+ * Hook providing mutations for address management
+ */
+export const useAddressMutations = () => {
+  const queryClient = useQueryClient();
+
+  const invalidateAddresses = () => {
+    queryClient.invalidateQueries({
+      queryKey: addressKeys.lists(),
+    });
+  };
+
+  // Create address mutation
+  const createAddressMutation = useMutation({
+    mutationFn: async (data: CreateAddressInput) => {
+      const result = await createAddress({ data });
       return result;
     },
     onSuccess: () => {
-      // Clear checkout session after successful payment
-      clearCheckoutSession();
-
-      // Invalidate orders to refresh the list
-      queryClient.invalidateQueries({ queryKey: orderKeys.all });
-      toast.success("Payment confirmed successfully!");
+      toast.success("Address added successfully");
+      invalidateAddresses();
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to confirm payment");
+      toast.error(error.message || "Failed to add address");
     },
   });
-}
 
-// ============================================================================
-// Get Customer Orders
-// ============================================================================
-
-export function useCustomerOrders(input?: Partial<GetOrdersInput>) {
-  return useQuery({
-    queryKey: orderKeys.list({ limit: 10, offset: 0, ...input }),
-    queryFn: async () => {
-      const result = await getCustomerOrders({
-        data: { limit: 10, offset: 0, ...input },
-      });
-      return result;
-    },
-  });
-}
-
-// ============================================================================
-// Get Order By ID
-// ============================================================================
-
-export function useOrderById(orderId: string) {
-  return useQuery({
-    queryKey: orderKeys.detail(orderId),
-    queryFn: async () => {
-      const result = await getOrderById({ data: { orderId } });
-      return result.order;
-    },
-    enabled: !!orderId,
-  });
-}
-
-// ============================================================================
-// Get Orders By IDs (Batch)
-// ============================================================================
-
-export function useOrdersByIds(input: GetOrdersByIdsInput) {
-  return useQuery({
-    queryKey: orderKeys.batch(input.orderIds),
-    queryFn: async () => {
-      const result = await getOrdersByIds({ data: input });
-      return result.orders;
-    },
-    enabled: input.orderIds.length > 0,
-  });
-}
-
-// ============================================================================
-// Cancel Order Mutation
-// ============================================================================
-
-export function useCancelOrder() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: CancelOrderInput) => {
-      const result = await cancelOrder({ data });
+  // Update address mutation
+  const updateAddressMutation = useMutation({
+    mutationFn: async (data: UpdateAddressInput) => {
+      const result = await updateAddress({ data });
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: orderKeys.all });
-      toast.success("Order cancelled successfully");
+      toast.success("Address updated successfully");
+      invalidateAddresses();
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to cancel order");
+      toast.error(error.message || "Failed to update address");
     },
   });
-}
 
-// ============================================================================
-// Get Order Payment Session Mutation
-// ============================================================================
-
-export function useGetOrderPaymentSession(options?: {
-  onSuccess?: (data: CheckoutSessionData) => void;
-}) {
-  return useMutation({
-    mutationFn: async (data: GetOrderByIdInput) => {
-      const result = await getOrderPaymentSession({ data });
+  // Delete address mutation
+  const deleteAddressMutation = useMutation({
+    mutationFn: async (data: DeleteAddressInput) => {
+      const result = await deleteAddress({ data });
       return result;
     },
-    onSuccess: (result) => {
-      options?.onSuccess?.(result);
+    onSuccess: () => {
+      toast.success("Address deleted successfully");
+      invalidateAddresses();
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to retrieve payment session");
+      toast.error(error.message || "Failed to delete address");
     },
   });
-}
+
+  // Set default address mutation
+  const setDefaultAddressMutation = useMutation({
+    mutationFn: async (data: DeleteAddressInput) => {
+      const result = await setDefaultAddress({ data });
+      return result;
+    },
+    onSuccess: () => {
+      toast.success("Default address updated");
+      invalidateAddresses();
+    },
+    onError: (_error: Error) => {
+      toast.error("Failed to set default address");
+    },
+  });
+
+  return {
+    createAddress: createAddressMutation.mutateAsync,
+    updateAddress: updateAddressMutation.mutateAsync,
+    deleteAddress: deleteAddressMutation.mutateAsync,
+    setDefaultAddress: setDefaultAddressMutation.mutateAsync,
+    isCreating: createAddressMutation.isPending,
+    isUpdating: updateAddressMutation.isPending,
+    isDeleting: deleteAddressMutation.isPending,
+    isSettingDefault: setDefaultAddressMutation.isPending,
+  };
+};

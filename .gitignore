@@ -25,3 +25,6 @@ todos.json
 !.vscode/extensions.json
 !.vscode/settings.json
 .idea
+
+# Environment variables
+.env

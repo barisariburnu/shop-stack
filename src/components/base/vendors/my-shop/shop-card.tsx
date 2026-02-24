@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { BarChart3, MapPin, Package, Star } from "lucide-react";
 import { useState } from "react";
+import { EditShopDialog } from "@/components/base/vendors/my-shop/edit-shop-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,6 @@ import { useShops } from "@/hooks/vendors/use-shops";
 import type { Shop } from "@/lib/db/schema/shop-schema";
 import { cn } from "@/lib/utils";
 import type { UpdateShopInput } from "@/lib/validators/shop";
-import { EditShopDialog } from "./edit-shop-dialog";
 
 interface ShopCardProps {
   shop: Shop;

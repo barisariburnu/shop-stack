@@ -19,7 +19,7 @@ interface PhoneInputProps {
 }
 
 const COUNTRY_CODES = [
-  { value: "BD", label: "BD" },
+  { value: "TR", label: "TR" },
   { value: "USA", label: "USA" },
   { value: "UK", label: "UK" },
   { value: "IND", label: "IND" },

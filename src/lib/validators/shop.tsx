@@ -12,7 +12,7 @@ export const shopSchema = z.object({
   description: z.string().optional(),
   address: z.string().min(5, "Address must be at least 5 characters"),
   phone: z.string().min(10, "Phone number must be at least 10 characters"),
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  email: z.email("Invalid email address").optional().or(z.literal("")),
 });
 
 export type ShopInput = z.infer<typeof shopSchema>;
@@ -38,12 +38,12 @@ export const createShopSchema = z.object({
     .string()
     .max(500, "Description must be at most 500 characters")
     .optional(),
-  logo: z.string().url().optional().or(z.literal("")),
-  banner: z.string().url().optional().or(z.literal("")),
+  logo: z.url().optional().or(z.literal("")),
+  banner: z.url().optional().or(z.literal("")),
   category: z.string().max(50).optional(),
   address: z.string().max(200).optional(),
   phone: z.string().max(20).optional(),
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  email: z.email("Invalid email address").optional().or(z.literal("")),
   enableNotifications: z.boolean().optional().default(false),
 });
 
@@ -64,12 +64,12 @@ export const updateShopSchema = z.object({
     )
     .optional(),
   description: z.string().max(500).optional(),
-  logo: z.string().url().optional().or(z.literal("")),
-  banner: z.string().url().optional().or(z.literal("")),
+  logo: z.url().optional().or(z.literal("")),
+  banner: z.url().optional().or(z.literal("")),
   category: z.string().max(50).optional(),
   address: z.string().max(200).optional(),
   phone: z.string().max(20).optional(),
-  email: z.string().email().optional().or(z.literal("")),
+  email: z.email().optional().or(z.literal("")),
   enableNotifications: z.boolean().optional(),
   status: z.enum(["pending", "active", "suspended"]).optional(),
 });

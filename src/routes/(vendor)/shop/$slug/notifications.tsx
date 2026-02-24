@@ -3,7 +3,7 @@ import { Loader2 } from "lucide-react";
 import ShopOrderDetailsTemplate from "@/components/templates/vendor/shop-order-details-template";
 import { useVendorOrderDetails } from "@/hooks/vendors/use-vendor-orders";
 
-export const Route = createFileRoute("/(vendor)/shop/$slug/orders/$orderId")({
+export const Route = createFileRoute("/(vendor)/shop/$slug/notifications")({
   component: OrderDetailsPage,
 });
 
